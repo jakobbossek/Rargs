@@ -16,7 +16,7 @@ parseArguments = function(arg.set, raw.args = commandArgs(trailingOnly = TRUE)) 
     arg.shortcuts = extractSubList(arg.set$arguments, "shortcut")
 
     # FIXME: this should be initialized with default values.
-    parsed.args = list()
+    parsed.args = initParsedArguments(arg.set)
 
     # FIXME: this is rather ugly. Could we make this more R-like?
     i = 1L
@@ -26,14 +26,14 @@ parseArguments = function(arg.set, raw.args = commandArgs(trailingOnly = TRUE)) 
         if (!(raw.arg %in% arg.names) && !(raw.arg %in% arg.shortcuts)) {
             stopf("Unknown argument '%s' provided.", raw.arg)
         }
+        # get matching argument
         arg.id = which(raw.arg == arg.names)
-        #print(arg.id)
         if (length(arg.id) == 0) {
             arg.id = which(raw.arg == arg.shortcuts)
         }
         arg = arg.set$arguments[[arg.id]]
-        #print(arg)
 
+        # handle case of flag, i.e., argument without value
         if (arg$is.flag) {
             i = i + 1
             # 'value' of flags is always TRUE
@@ -42,22 +42,60 @@ parseArguments = function(arg.set, raw.args = commandArgs(trailingOnly = TRUE)) 
         }
 
         # argument required, but no default
-
         i = i + 1L
         raw.val = raw.args[i]
+        #FIXME: casting to type
         parsed.args[[raw.arg]] = raw.val
 
         i = i + 1L
     }
 
     # check if all required arguments are passed?
-    arg.required = extractSubList(arg.set$arguments, "required")
-    required.arg.names = arg.names[which(arg.required)]
-    unsatisfied = setdiff(required.arg.names, names(parsed.args))
+    unsatisfied = getRequiredAndNotGiven(arg.set, names(parsed.args))
     if (length(unsatisfied) > 0L) {
         #FIXME: move this paste stuff to specific function pasteVector
         stopf("There are missing required arguments: '%s'", do.call(paste, c(as.list(unsatisfied), sep = ", ")))
     }
     class(parsed.args) = "RargsParsedArguments"
     return(parsed.args)
+}
+
+# Helper function.
+#
+# Initialize result object with default values for arguments with default
+# values specified.
+#
+# @param arg.set [RargsArgumentSet]
+#  Argument set.
+# @return [list]
+initParsedArguments = function(arg.set) {
+    parsed.args = list()
+    for (argument in arg.set$arguments) {
+        if (!is.null(argument$default)) {
+            parsed.args[argument$name] = argument$default
+        }
+    }
+    return(parsed.args)
+}
+
+
+# Helper function.
+#
+# Checks whether all required arguments are set.
+#
+# @param arg.set [RargsArgumentSet]
+#  Argument set.
+# @param arg.names [character]
+#  Vector of arguments specified by the user.
+# @return [character(1)]
+#  Character vector of argument long names, which are required, but not provided.
+getRequiredAndNotGiven = function(arg.set, arg.names) {
+    assertClass(arg.set, "RargsArgumentSet")
+    assertCharacter(arg.names)
+
+    args.required = extractSubList(arg.set$arguments, "required")
+    required.args.names = extractSubList(arg.set$arguments, "name")
+    required.arg.names = arg.names[which(args.required)]
+    unsatisfied = setdiff(required.arg.names, arg.names)
+    return(unsatisfied)
 }
