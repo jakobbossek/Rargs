@@ -19,10 +19,11 @@ parseArguments = function(arg.set, raw.args = commandArgs(trailingOnly = TRUE)) 
     parsed.args = initParsedArguments(arg.set)
 
     # FIXME: this is rather ugly. Could we make this more R-like?
+    # FIXME: if is.flag is true, no type is required or set to logical automatically
     i = 1L
     while (i <= length(raw.args)) {
         raw.arg = raw.args[i]
-        catf("Processing with argument '%s'", raw.arg)
+        #catf("Processing with argument '%s'", raw.arg)
         if (!(raw.arg %in% arg.names) && !(raw.arg %in% arg.shortcuts)) {
             stopf("Unknown argument '%s' provided.", raw.arg)
         }
