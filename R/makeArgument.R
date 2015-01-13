@@ -31,7 +31,7 @@ makeArgument = function(name,
     if (!is.null(shortcut))
         assertCharacter(shortcut)
     if (!is.null(alias))
-        assertCharacter(shortcut, any.missing = FALSE)
+        assertCharacter(alias, any.missing = FALSE)
     assertFlag(is.flag)
     if (!is.flag && is.null(type))
         stopf("You need to specify a type for argument '%s'", name)
